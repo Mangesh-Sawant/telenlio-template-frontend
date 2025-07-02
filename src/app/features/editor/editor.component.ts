@@ -3,9 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-// Import Nunjucks and the CodeMirror type. All other imports are now in main.ts
+// Import Nunjucks and CodeMirror
 import * as nunjucks from 'nunjucks';
-import * as CodeMirror from 'codemirror';
+import CodeMirror from 'codemirror';
+
+// --- NEW: Import Prettier and its parsers ---
+import * as prettier from "prettier/standalone";
+import * as prettierPluginHtml from "prettier/plugins/html";
+import prettierPluginEstree from "prettier/plugins/estree";
+import * as prettierPluginBabel from "prettier/plugins/babel";
 import {SafeHtmlPipe} from '../../core/safe-html.pipe';
 
 @Component({
@@ -57,16 +63,40 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
     setTimeout(() => this.initializeHtmlEditor(), 0);
   }
 
-  setActiveTab(tab: 'html' | 'css' | 'json'): void {
-    this.activeTab = tab;
-    setTimeout(() => {
-      switch (tab) {
-        case 'html': this.initializeHtmlEditor(); break;
-        case 'css': this.initializeCssEditor(); break;
-        case 'json': this.initializeJsonEditor(); break;
-      }
-    }, 1);
+  // --- REPLACED: formatCode method now uses Prettier ---
+  async formatCode(): Promise<void> {
+    const editor = this.getActiveEditor();
+    if (!editor) return;
+
+    const code = editor.getValue();
+    let parser: string;
+
+    // Determine the correct parser for the active tab
+    switch (this.activeTab) {
+      case 'html': parser = 'html'; break;
+      case 'css': parser = 'css'; break;
+      case 'json': parser = 'json'; break;
+      default: return;
+    }
+
+    try {
+      const formattedCode = await prettier.format(code, {
+        parser: parser,
+        plugins: [prettierPluginHtml, prettierPluginEstree, prettierPluginBabel],
+        // You can add more Prettier options here if you want
+        printWidth: 100,
+      });
+
+      // Update the editor with the formatted code
+      editor.setValue(formattedCode);
+
+    } catch (error) {
+      console.error("Could not format code:", error);
+      // Optionally, show a notification to the user
+    }
   }
+
+  // --- All other methods are unchanged ---
 
   private getActiveEditor(): CodeMirror.Editor | undefined {
     switch (this.activeTab) {
@@ -77,11 +107,15 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
     }
   }
 
-  formatCode(): void {
-    const editor = this.getActiveEditor();
-    if (!editor) return;
-    const totalLines = editor.lineCount();
-    (editor as any).autoFormatRange({ line: 0, ch: 0 }, { line: totalLines });
+  setActiveTab(tab: 'html' | 'css' | 'json'): void {
+    this.activeTab = tab;
+    setTimeout(() => {
+      switch (tab) {
+        case 'html': this.initializeHtmlEditor(); break;
+        case 'css': this.initializeCssEditor(); break;
+        case 'json': this.initializeJsonEditor(); break;
+      }
+    }, 1);
   }
 
   undo(): void { this.getActiveEditor()?.undo(); }
@@ -108,7 +142,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
   private initializeHtmlEditor() {
     if (!this.cmHtml) {
       this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
-        mode: 'jinja2', lineNumbers: true, theme: 'default'
+        mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
       });
       this.cmHtml.on('change', (cm) => this.htmlContent = cm.getValue());
     }
@@ -118,7 +152,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
   private initializeCssEditor() {
     if (!this.cmCss) {
       this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
-        mode: 'css', lineNumbers: true, theme: 'default'
+        mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
       });
       this.cmCss.on('change', (cm) => this.cssContent = cm.getValue());
     }
@@ -128,7 +162,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
   private initializeJsonEditor() {
     if (!this.cmJson) {
       this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
-        mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default'
+        mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
       });
       this.cmJson.on('change', (cm) => this.jsonData = cm.getValue());
     }
