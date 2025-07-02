@@ -1,17 +1,11 @@
-import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {FormsModule} from '@angular/forms';
-import {RouterModule} from '@angular/router';
+import { Component, AfterViewInit, ViewChild, ElementRef, HostBinding } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
-// Import Nunjucks and CodeMirror
+// Import Nunjucks and the CodeMirror type. All other imports are now in main.ts
 import * as nunjucks from 'nunjucks';
 import * as CodeMirror from 'codemirror';
-
-// Import CodeMirror modes for syntax highlighting
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/jinja2/jinja2';
 import {SafeHtmlPipe} from '../../core/safe-html.pipe';
 
 @Component({
@@ -33,24 +27,21 @@ export class EditorComponent implements AfterViewInit {
   templateName: string = "Invoice Template";
   activeTab: 'html' | 'css' | 'json' = 'html';
 
+  @HostBinding('class')
+  viewMode: 'default' | 'preview' | 'fullscreen' = 'default';
+
   htmlContent: string = `<h1>Invoice #{{ invoice.number }}</h1>
 <p><strong>Billed to:</strong> {{ customer.name }}</p>
-
 <h2>Items:</h2>
 <ul>
   {% for item in items %}
     <li>{{ item.name }} - \${{ item.price }}</li>
   {% endfor %}
 </ul>
-
-<p><strong>Total: \${{ total }}</strong></p>
-`;
-
+<p><strong>Total: \${{ total }}</strong></p>`;
   cssContent: string = `body { font-family: sans-serif; }
 ul { list-style-type: none; padding: 0; }
-li { border-bottom: 1px solid #eee; padding: 5px 0; }
-`;
-
+li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
   jsonData: string = `{
   "invoice": { "number": "2024-001" },
   "customer": { "name": "ACME Corp" },
@@ -63,42 +54,69 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }
 }`;
 
   ngAfterViewInit(): void {
-    // On load, only initialize the editor for the default active tab.
-    this.initializeHtmlEditor();
+    setTimeout(() => this.initializeHtmlEditor(), 0);
   }
 
   setActiveTab(tab: 'html' | 'css' | 'json'): void {
     this.activeTab = tab;
-
-    // Use a timeout to ensure the DOM has updated and the container is visible
-    // before we initialize the editor for the first time or refresh it.
     setTimeout(() => {
       switch (tab) {
-        case 'html':
-          this.initializeHtmlEditor();
-          break;
-        case 'css':
-          this.initializeCssEditor();
-          break;
-        case 'json':
-          this.initializeJsonEditor();
-          break;
+        case 'html': this.initializeHtmlEditor(); break;
+        case 'css': this.initializeCssEditor(); break;
+        case 'json': this.initializeJsonEditor(); break;
       }
     }, 1);
   }
 
+  private getActiveEditor(): CodeMirror.Editor | undefined {
+    switch (this.activeTab) {
+      case 'html': return this.cmHtml;
+      case 'css': return this.cmCss;
+      case 'json': return this.cmJson;
+      default: return undefined;
+    }
+  }
+
+  formatCode(): void {
+    const editor = this.getActiveEditor();
+    if (!editor) return;
+    const totalLines = editor.lineCount();
+    (editor as any).autoFormatRange({ line: 0, ch: 0 }, { line: totalLines });
+  }
+
+  undo(): void { this.getActiveEditor()?.undo(); }
+  clearCode(): void { this.getActiveEditor()?.setValue(''); }
+
+  togglePreview(): void {
+    this.viewMode = this.viewMode === 'preview' ? 'default' : 'preview';
+    this.refreshAllEditors();
+  }
+
+  toggleFullscreen(): void {
+    this.viewMode = this.viewMode === 'fullscreen' ? 'default' : 'fullscreen';
+    this.refreshAllEditors();
+  }
+
+  private refreshAllEditors(): void {
+    setTimeout(() => {
+      this.cmHtml?.refresh();
+      this.cmCss?.refresh();
+      this.cmJson?.refresh();
+    }, 250);
+  }
+
   private initializeHtmlEditor() {
-    if (!this.cmHtml) { // LAZY INITIALIZATION: Only create if it doesn't exist
+    if (!this.cmHtml) {
       this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
         mode: 'jinja2', lineNumbers: true, theme: 'default'
       });
       this.cmHtml.on('change', (cm) => this.htmlContent = cm.getValue());
     }
-    this.cmHtml.refresh(); // Always refresh to ensure it's drawn correctly
+    this.cmHtml.refresh();
   }
 
   private initializeCssEditor() {
-    if (!this.cmCss) { // LAZY INITIALIZATION
+    if (!this.cmCss) {
       this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
         mode: 'css', lineNumbers: true, theme: 'default'
       });
@@ -108,7 +126,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }
   }
 
   private initializeJsonEditor() {
-    if (!this.cmJson) { // LAZY INITIALIZATION
+    if (!this.cmJson) {
       this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
         mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default'
       });

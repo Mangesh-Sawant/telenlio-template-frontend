@@ -9,8 +9,8 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary">Preview</button>
-      <button class="btn btn-secondary">Fullscreen</button>
+      <button class="btn btn-secondary" (click)="togglePreview()">Preview</button>
+      <button class="btn btn-secondary" (click)="toggleFullscreen()">Fullscreen</button>
       <button class="btn btn-primary">Save Template</button>
     </div>
   </header>
@@ -21,16 +21,24 @@
       <!-- TOOLBAR -->
       <div class="editor-toolbar">
         <div class="tabs">
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML (Jinja2)</button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS</button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON Data</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML
+            (Jinja2)
+          </button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS
+          </button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON
+            Data
+          </button>
         </div>
-        <div class="actions"></div>
+        <div class="actions">
+          <button class="btn btn-sm btn-secondary" (click)="formatCode()">Format</button>
+          <button class="btn btn-sm btn-clear" (click)="clearCode()">Clear</button>
+          <button class="btn btn-sm btn-secondary" (click)="undo()">Undo</button>
+        </div>
       </div>
 
       <!-- EDITOR WRAPPER -->
       <div class="code-editor-wrapper">
-        <!-- Each editor gets its own container, which is hidden/shown. -->
         <div class="editor-instance-wrapper" [hidden]="activeTab !== 'html'">
           <textarea #htmlEditor>{{ htmlContent }}</textarea>
         </div>
@@ -45,7 +53,14 @@
 
     <!-- PREVIEW PANEL -->
     <div class="preview-panel">
-      <div class="preview-header"><span>Live Preview</span></div>
+      @if (viewMode === 'fullscreen') {
+        <div class="preview-header">
+
+          <span>Live Preview</span>
+          <button class="btn btn-secondary" (click)="toggleFullscreen()">Fullscreen</button>
+
+        </div>
+      }
       <div class="preview-content">
         <iframe [srcdoc]="livePreviewContent | safeHtml"></iframe>
       </div>

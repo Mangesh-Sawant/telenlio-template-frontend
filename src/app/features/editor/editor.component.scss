@@ -1,6 +1,3 @@
-// All previous styles remain. This is the complete file.
-
-// Use global CSS variables from src/styles.scss
 :host {
   display: block;
   background-color: var(--card-bg);
@@ -15,7 +12,6 @@
   height: 100%;
 }
 
-/* Header */
 .editor-header {
   display: flex;
   justify-content: space-between;
@@ -39,7 +35,6 @@
 .title-group p { font-size: 0.9rem; color: var(--text-secondary); margin: 0; }
 .header-actions { display: flex; gap: 0.75rem; }
 
-/* Buttons */
 .btn {
   padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem;
   font-weight: 500; cursor: pointer; transition: all 0.2s ease; background-color: var(--card-bg);
@@ -51,15 +46,14 @@
 .btn-clear { border-color: #fee2e2; color: var(--danger-color); }
 .btn-clear:hover { background-color: #fef2f2; }
 
-/* Main Content */
 .editor-main {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  transition: grid-template-columns 0.2s ease-in-out;
   flex-grow: 1;
   overflow: hidden;
 }
 
-/* Left Panel: Editor */
 .editor-panel {
   display: flex;
   flex-direction: column;
@@ -86,13 +80,10 @@
   }
 }
 
-/* Styles for the editor containers */
 .code-editor-wrapper {
   flex-grow: 1;
   position: relative;
-  textarea {
-    display: none; // Hide original textareas permanently
-  }
+  textarea { display: none; }
 }
 
 .editor-instance-wrapper {
@@ -102,19 +93,20 @@
   height: 100%;
 }
 
-// Global style for all CodeMirror instances
 ::ng-deep .CodeMirror {
   height: 100% !important;
   font-size: 14px;
   line-height: 1.6;
 }
 
-/* Right Panel: Preview */
 .preview-panel {
   display: flex;
   flex-direction: column;
 }
 .preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.75rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   font-weight: 500;
@@ -126,10 +118,13 @@
   background-color: #f8fafc;
   padding: 1rem;
   iframe {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: white;
   }
 }
+
+:host(.preview) .editor-main { grid-template-columns: 0fr 1fr; }
+:host(.fullscreen) .editor-main { grid-template-columns: 1fr 1fr; }
+:host(.fullscreen) .editor-header { display: none; }
