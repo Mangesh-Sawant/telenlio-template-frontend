@@ -1,3 +1,5 @@
+// All previous styles remain. This is the complete file.
+
 // Use global CSS variables from src/styles.scss
 :host {
   display: block;
@@ -20,7 +22,7 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0; // Prevent header from shrinking
+  flex-shrink: 0;
 }
 .header-title-section {
   display: flex;
@@ -54,7 +56,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   flex-grow: 1;
-  overflow: hidden; // Important for child height
+  overflow: hidden;
 }
 
 /* Left Panel: Editor */
@@ -72,29 +74,39 @@
   flex-shrink: 0;
 }
 .tabs, .actions { display: flex; gap: 0.5rem; }
-.btn-tab.active {
-  border-color: var(--primary-color);
-  background-color: var(--primary-bg-light);
-  color: var(--primary-color);
+.btn-tab {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+  &.active {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
 }
+
+/* Styles for the editor containers */
 .code-editor-wrapper {
   flex-grow: 1;
   position: relative;
   textarea {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    outline: none;
-    resize: none;
-    padding: 1.5rem;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: var(--text-primary);
-    box-sizing: border-box;
+    display: none; // Hide original textareas permanently
   }
+}
+
+.editor-instance-wrapper {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// Global style for all CodeMirror instances
+::ng-deep .CodeMirror {
+  height: 100% !important;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* Right Panel: Preview */
@@ -111,13 +123,13 @@
 }
 .preview-content {
   flex-grow: 1;
-  background-color: #f8fafc; // Light gray background for preview area
+  background-color: #f8fafc;
   padding: 1rem;
   iframe {
     width: 100%;
     height: 100%;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    background-color: white; // Iframe content background
+    background-color: white;
   }
 }

@@ -15,34 +15,39 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT (EDITOR + PREVIEW) -->
+  <!-- MAIN CONTENT -->
   <main class="editor-main">
-    <!-- Left Panel: HTML Editor -->
     <div class="editor-panel">
+      <!-- TOOLBAR -->
       <div class="editor-toolbar">
         <div class="tabs">
-          <button class="btn btn-sm btn-tab active">HTML Content</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML (Jinja2)</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON Data</button>
         </div>
-        <div class="actions">
-          <button class="btn btn-sm btn-secondary">Format</button>
-          <button class="btn btn-sm btn-clear">Clear</button>
-          <button class="btn btn-sm btn-secondary">Undo</button>
-          <button class="btn btn-sm btn-secondary">Redo</button>
-        </div>
+        <div class="actions"></div>
       </div>
+
+      <!-- EDITOR WRAPPER -->
       <div class="code-editor-wrapper">
-        <textarea [(ngModel)]="htmlContent" spellcheck="false"></textarea>
+        <!-- Each editor gets its own container, which is hidden/shown. -->
+        <div class="editor-instance-wrapper" [hidden]="activeTab !== 'html'">
+          <textarea #htmlEditor>{{ htmlContent }}</textarea>
+        </div>
+        <div class="editor-instance-wrapper" [hidden]="activeTab !== 'css'">
+          <textarea #cssEditor>{{ cssContent }}</textarea>
+        </div>
+        <div class="editor-instance-wrapper" [hidden]="activeTab !== 'json'">
+          <textarea #jsonEditor>{{ jsonData }}</textarea>
+        </div>
       </div>
     </div>
 
-    <!-- Right Panel: Live Preview -->
+    <!-- PREVIEW PANEL -->
     <div class="preview-panel">
-      <div class="preview-header">
-        <span>Live Preview</span>
-      </div>
+      <div class="preview-header"><span>Live Preview</span></div>
       <div class="preview-content">
-        <!-- The iframe isolates the preview's styles from the main app -->
-        <iframe [srcdoc]="htmlContent | safeHtml"></iframe>
+        <iframe [srcdoc]="livePreviewContent | safeHtml"></iframe>
       </div>
     </div>
   </main>
