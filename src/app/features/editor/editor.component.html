@@ -1,0 +1,49 @@
+<div class="editor-container">
+  <!-- HEADER -->
+  <header class="editor-header">
+    <div class="header-title-section">
+      <a routerLink="/dashboard" class="back-link"><i class="ti ti-arrow-narrow-left"></i></a>
+      <div class="title-group">
+        <h1>Editing: {{ templateName }}</h1>
+        <p>Edit your template content</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary">Preview</button>
+      <button class="btn btn-secondary">Fullscreen</button>
+      <button class="btn btn-primary">Save Template</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT (EDITOR + PREVIEW) -->
+  <main class="editor-main">
+    <!-- Left Panel: HTML Editor -->
+    <div class="editor-panel">
+      <div class="editor-toolbar">
+        <div class="tabs">
+          <button class="btn btn-sm btn-tab active">HTML Content</button>
+        </div>
+        <div class="actions">
+          <button class="btn btn-sm btn-secondary">Format</button>
+          <button class="btn btn-sm btn-clear">Clear</button>
+          <button class="btn btn-sm btn-secondary">Undo</button>
+          <button class="btn btn-sm btn-secondary">Redo</button>
+        </div>
+      </div>
+      <div class="code-editor-wrapper">
+        <textarea [(ngModel)]="htmlContent" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <!-- Right Panel: Live Preview -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <span>Live Preview</span>
+      </div>
+      <div class="preview-content">
+        <!-- The iframe isolates the preview's styles from the main app -->
+        <iframe [srcdoc]="htmlContent | safeHtml"></iframe>
+      </div>
+    </div>
+  </main>
+</div>

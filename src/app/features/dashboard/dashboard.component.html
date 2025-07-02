@@ -1,0 +1,85 @@
+<div class="dashboard-container">
+  <!-- HEADER -->
+  <header class="dashboard-header">
+    <div class="header-brand">
+      <div class="logo">T</div>
+      <div class="brand-info">
+        <h1 class="welcome-message">Welcome, User!</h1>
+        <p class="brand-name">TelenlioTemplate.in</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-link">Logout</button>
+      <button class="btn btn-secondary">Import</button>
+      <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create New Template</button>
+    </div>
+  </header>
+
+  <main class="dashboard-content">
+    <!-- STATS CARDS -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="icon-wrapper primary"><i class="ti ti-file"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Total Templates</span>
+          <span class="stat-value">3</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-wrapper success"><i class="ti ti-clock-hour-2"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Recently Modified</span>
+          <span class="stat-value">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="icon-wrapper info"><i class="ti ti-download"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">PDF Exports</span>
+          <span class="stat-value">16</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTERS BAR -->
+    <section class="card filter-bar">
+      <div class="search-input">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search templates...">
+      </div>
+      <div class="sort-select">
+        <select>
+          <option>Newest First</option>
+          <option>Oldest First</option>
+          <option>Alphabetical</option>
+        </select>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+    </section>
+
+    <!-- TEMPLATES LIST -->
+    <section class="card templates-list">
+      <h2 class="list-title">Your Templates</h2>
+      <div class="template-item" *ngFor="let template of templates">
+        <div class="template-details">
+          <div class="icon-wrapper primary small"><i class="ti ti-file"></i></div>
+          <div class="template-info">
+            <span class="template-name">{{ template.name }}</span>
+            <span class="template-meta">
+              Created: {{ template.created }}  •  Modified: {{ template.modified }}
+            </span>
+          </div>
+        </div>
+        <div class="template-exports">{{ template.exports }} exports</div>
+        <div class="template-actions">
+          <a href="#" class="action-link link-primary">Preview</a>
+          <a routerLink="/editor/templateId" class="action-link link-primary">Open</a>
+          <a href="#" class="action-link link-secondary">Edit Name</a>
+          <a href="#" class="action-link link-success">Duplicate</a>
+          <a href="#" class="action-link link-info">Export</a>
+          <a href="#" class="action-link link-danger">Delete</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

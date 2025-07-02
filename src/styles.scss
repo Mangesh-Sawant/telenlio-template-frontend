@@ -1,1 +1,42 @@
+@import "tailwindcss";
+
+/* You can add global styles to this file, and also import other style files */
+
+// 1. Import the font for the entire application
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+// 2. Define global CSS variables (optional, but good practice)
+:root {
+
+  // Brand Colors
+  --primary-color: #3b82f6; // Blue
+  --primary-bg-light: #eff6ff;
+  --success-color: #10b981; // Green
+  --success-bg-light: #f0fdf4;
+  --info-color: #8b5cf6; // Purple
+  --info-bg-light: #f5f3ff;
+  --danger-color: #ef4444; // Red
+
+  // Neutral Colors
+  --page-bg: #f8fafc; // Light Gray
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+
+  --primary-bg: #6c5ce7;
+  --secondary-bg: #897dec;
+  --button-color: #3b82f6;
+  --font-family: 'Poppins', sans-serif;
+}
+
+// 3. Reset default browser styles and apply the background
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-family);
+  background: linear-gradient(135deg, var(--secondary-bg), var(--primary-bg));
+}
+
 /* You can add global styles to this file, and also import other style files */

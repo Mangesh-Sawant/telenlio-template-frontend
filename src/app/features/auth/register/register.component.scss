@@ -1,0 +1,184 @@
+// Use the global variables defined in styles.scss
+:host {
+  --button-hover-color: #2563eb;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+// Style the component's host element (<app-register>)
+// This makes it a flex container that fills the available space
+:host {
+  display: flex;
+  flex-direction: column; // Change direction to column
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box; // Important for padding
+  position: relative; // For the decorative circles
+  overflow: hidden;
+
+  // Decorative background circles
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    z-index: 0;
+  }
+  &::before {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: 10%;
+  }
+  &::after {
+    width: 300px;
+    height: 300px;
+    bottom: 5%;
+    right: 5%;
+  }
+}
+
+// All other styles are relative to the component now
+.page-header, .form-card {
+  position: relative;
+  z-index: 1;
+}
+
+.page-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 2rem;
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    color: var(--button-color);
+    border-radius: 12px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .brand-name {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .tagline {
+    font-size: 1rem;
+    font-weight: 400;
+    opacity: 0.9;
+    margin-top: 0.25rem;
+  }
+}
+
+.form-card {
+  background-color: var(--card-bg);
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.form-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.form-subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 2rem 0;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1.25rem;
+  .form-group {
+    flex: 1;
+  }
+}
+
+.form-group {
+  text-align: left;
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--button-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+}
+
+.submit-btn {
+  background-color: var(--button-color);
+  color: white;
+  border: none;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 0.5rem;
+
+  &:hover {
+    background-color: var(--button-hover-color);
+  }
+}
+
+.signin-link {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+
+  a {
+    color: var(--button-color);
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
