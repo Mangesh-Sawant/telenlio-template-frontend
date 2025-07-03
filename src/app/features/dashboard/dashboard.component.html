@@ -9,9 +9,9 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-link">Logout</button>
+      <button (click)="onClickLogOut()" class="btn btn-link">Logout</button>
       <button class="btn btn-secondary">Import</button>
-      <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create New Template</button>
+      <button routerLink="/editor/new" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create New Template</button>
     </div>
   </header>
 

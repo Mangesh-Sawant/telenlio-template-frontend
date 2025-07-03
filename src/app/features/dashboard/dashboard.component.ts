@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import {RouterLink} from '@angular/router';
+import {Component} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {Router, RouterLink} from '@angular/router';
+import {AuthService} from '../../core/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,4 +31,13 @@ export class DashboardComponent {
       exports: 8
     }
   ];
+
+  constructor(private router: Router,
+              private authService: AuthService) {
+  }
+
+  onClickLogOut(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 }

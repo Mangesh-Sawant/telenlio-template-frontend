@@ -1,18 +1,18 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, HostBinding } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, ElementRef, HostBinding, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { SafeHtmlPipe } from '../../core/safe-html.pipe'; // Please verify this path
+import { TemplateService } from './services/template.service'; // Please verify this path
+import { Template } from './models/template'; // Please verify this path
 
-// Import Nunjucks and CodeMirror
+// Imports for Nunjucks, CodeMirror, and Prettier
 import * as nunjucks from 'nunjucks';
-import CodeMirror from 'codemirror';
-
-// --- NEW: Import Prettier and its parsers ---
+import * as CodeMirror from 'codemirror';
 import * as prettier from "prettier/standalone";
 import * as prettierPluginHtml from "prettier/plugins/html";
 import prettierPluginEstree from "prettier/plugins/estree";
 import * as prettierPluginBabel from "prettier/plugins/babel";
-import {SafeHtmlPipe} from '../../core/safe-html.pipe';
 
 @Component({
   selector: 'app-editor',
@@ -21,82 +21,141 @@ import {SafeHtmlPipe} from '../../core/safe-html.pipe';
   templateUrl: './editor.component.html',
   styleUrls: ['./editor.component.scss']
 })
-export class EditorComponent implements AfterViewInit {
+export class EditorComponent implements OnInit, AfterViewInit {
   @ViewChild('htmlEditor') htmlEditorRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('cssEditor') cssEditorRef!: ElementRef<HTMLTextAreaElement>;
+  // CORRECTED: @Viewchild -> @ViewChild
   @ViewChild('jsonEditor') jsonEditorRef!: ElementRef<HTMLTextAreaElement>;
+
+  isEditMode = false;
+  templateId: string | null = null;
 
   private cmHtml: CodeMirror.Editor | undefined;
   private cmCss: CodeMirror.Editor | undefined;
   private cmJson: CodeMirror.Editor | undefined;
 
-  templateName: string = "Invoice Template";
+  templateName: string = "New Template";
   activeTab: 'html' | 'css' | 'json' = 'html';
 
   @HostBinding('class')
   viewMode: 'default' | 'preview' | 'fullscreen' = 'default';
 
-  htmlContent: string = `<h1>Invoice #{{ invoice.number }}</h1>
-<p><strong>Billed to:</strong> {{ customer.name }}</p>
-<h2>Items:</h2>
-<ul>
-  {% for item in items %}
-    <li>{{ item.name }} - \${{ item.price }}</li>
-  {% endfor %}
-</ul>
-<p><strong>Total: \${{ total }}</strong></p>`;
-  cssContent: string = `body { font-family: sans-serif; }
-ul { list-style-type: none; padding: 0; }
-li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
-  jsonData: string = `{
-  "invoice": { "number": "2024-001" },
-  "customer": { "name": "ACME Corp" },
-  "items": [
-    { "name": "Product A", "price": 100 },
-    { "name": "Product B", "price": 150 },
-    { "name": "Service C", "price": 250 }
-  ],
-  "total": 500
-}`;
+  // Internal component state
+  htmlContent: string = `<h1>Welcome, {{ user.name }}!</h1>`;
+  cssContent: string = `body { font-family: sans-serif; color: #333; }`;
+  jsonData: string = `{ "user": { "name": "Alex" } }`; // JSON data is kept as a string for the editor
 
-  ngAfterViewInit(): void {
-    setTimeout(() => this.initializeHtmlEditor(), 0);
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private templateService: TemplateService
+  ) {}
+
+  ngOnInit(): void {
+    this.templateId = this.route.snapshot.paramMap.get('id');
+    if (this.templateId && this.templateId !== 'new') {
+      this.isEditMode = true;
+      this.loadTemplateData(this.templateId);
+    } else {
+      this.isEditMode = false;
+      this.templateName = "New Template";
+    }
   }
 
-  // --- REPLACED: formatCode method now uses Prettier ---
+  ngAfterViewInit(): void {
+    setTimeout(() => this.initializeEditors(true), 0);
+  }
+
+  loadTemplateData(id: string): void {
+    this.templateService.getTemplateById(id).subscribe({
+      next: (template: Template) => {
+        this.templateName = template.title;
+        this.htmlContent = template.html;
+        this.cssContent = template.css;
+        this.jsonData = JSON.stringify(template.example_data, null, 2);
+
+        // setValue can be called even if editors aren't fully ready
+        this.cmHtml?.setValue(this.htmlContent);
+        this.cmCss?.setValue(this.cssContent);
+        this.cmJson?.setValue(this.jsonData);
+      },
+      error: (err) => {
+        console.error("Failed to load template", err);
+        alert("Could not load the requested template.");
+        this.router.navigate(['/dashboard']);
+      }
+    });
+  }
+
+  async saveTemplate(): Promise<void> {
+    let exampleData;
+    try {
+      exampleData = JSON.parse(this.jsonData);
+    } catch (e) {
+      alert("The JSON data is invalid. Please fix it before saving.");
+      return;
+    }
+
+    const templateData = {
+      title: this.templateName,
+      html: this.htmlContent,
+      css: this.cssContent,
+      example_data: exampleData,
+    };
+
+    if (this.isEditMode && this.templateId) {
+      this.templateService.updateTemplate(this.templateId, templateData).subscribe({
+        next: () => alert('Template updated successfully!'),
+        error: (err) => alert(`Failed to update template: ${err.error.detail || err.message}`)
+      });
+    } else {
+      this.templateService.createTemplate(templateData).subscribe({
+        next: (response) => {
+          alert('Template created successfully!');
+          this.router.navigate(['/editor', response.template_id]);
+        },
+        error: (err) => alert(`Failed to create template: ${err.error.detail || err.message}`)
+      });
+    }
+  }
+
+  private initializeEditors(initialLoad = false): void {
+    if (initialLoad) {
+      this.initializeHtmlEditor();
+      this.initializeCssEditor();
+      this.initializeJsonEditor();
+    }
+  }
+
+  setActiveTab(tab: 'html' | 'css' | 'json'): void {
+    this.activeTab = tab;
+    setTimeout(() => {
+      this.cmHtml?.refresh();
+      this.cmCss?.refresh();
+      this.cmJson?.refresh();
+    }, 1);
+  }
+
   async formatCode(): Promise<void> {
     const editor = this.getActiveEditor();
     if (!editor) return;
-
     const code = editor.getValue();
     let parser: string;
-
-    // Determine the correct parser for the active tab
     switch (this.activeTab) {
       case 'html': parser = 'html'; break;
       case 'css': parser = 'css'; break;
       case 'json': parser = 'json'; break;
       default: return;
     }
-
     try {
       const formattedCode = await prettier.format(code, {
         parser: parser,
         plugins: [prettierPluginHtml, prettierPluginEstree, prettierPluginBabel],
-        // You can add more Prettier options here if you want
         printWidth: 100,
       });
-
-      // Update the editor with the formatted code
       editor.setValue(formattedCode);
-
-    } catch (error) {
-      console.error("Could not format code:", error);
-      // Optionally, show a notification to the user
-    }
+    } catch (error) { console.error("Could not format code:", error); }
   }
-
-  // --- All other methods are unchanged ---
 
   private getActiveEditor(): CodeMirror.Editor | undefined {
     switch (this.activeTab) {
@@ -105,17 +164,6 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
       case 'json': return this.cmJson;
       default: return undefined;
     }
-  }
-
-  setActiveTab(tab: 'html' | 'css' | 'json'): void {
-    this.activeTab = tab;
-    setTimeout(() => {
-      switch (tab) {
-        case 'html': this.initializeHtmlEditor(); break;
-        case 'css': this.initializeCssEditor(); break;
-        case 'json': this.initializeJsonEditor(); break;
-      }
-    }, 1);
   }
 
   undo(): void { this.getActiveEditor()?.undo(); }
@@ -139,7 +187,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
     }, 250);
   }
 
-  private initializeHtmlEditor() {
+  private initializeHtmlEditor(): void {
     if (!this.cmHtml) {
       this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
         mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
@@ -149,7 +197,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
     this.cmHtml.refresh();
   }
 
-  private initializeCssEditor() {
+  private initializeCssEditor(): void {
     if (!this.cmCss) {
       this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
         mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
@@ -159,7 +207,7 @@ li { border-bottom: 1px solid #eee; padding: 5px 0; }`;
     this.cmCss.refresh();
   }
 
-  private initializeJsonEditor() {
+  private initializeJsonEditor(): void {
     if (!this.cmJson) {
       this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
         mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true

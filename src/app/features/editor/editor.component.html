@@ -1,34 +1,31 @@
 <div class="editor-container">
-  <!-- HEADER -->
   <header class="editor-header">
     <div class="header-title-section">
       <a routerLink="/dashboard" class="back-link"><i class="ti ti-arrow-narrow-left"></i></a>
       <div class="title-group">
-        <h1>Editing: {{ templateName }}</h1>
+        <h1>
+          {{ isEditMode ? 'Editing:' : 'Creating:' }}
+          <input type="text" [(ngModel)]="templateName" class="title-input" placeholder="Enter template name...">
+        </h1>
         <p>Edit your template content</p>
       </div>
     </div>
     <div class="header-actions">
       <button class="btn btn-secondary" (click)="togglePreview()">Preview</button>
       <button class="btn btn-secondary" (click)="toggleFullscreen()">Fullscreen</button>
-      <button class="btn btn-primary">Save Template</button>
+      <button class="btn btn-primary" (click)="saveTemplate()">
+        {{ isEditMode ? 'Save Changes' : 'Create Template' }}
+      </button>
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
   <main class="editor-main">
     <div class="editor-panel">
-      <!-- TOOLBAR -->
       <div class="editor-toolbar">
         <div class="tabs">
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML
-            (Jinja2)
-          </button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS
-          </button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON
-            Data
-          </button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML (Jinja2)</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS</button>
+          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON Data</button>
         </div>
         <div class="actions">
           <button class="btn btn-sm btn-secondary" (click)="formatCode()">Format</button>
@@ -36,8 +33,6 @@
           <button class="btn btn-sm btn-secondary" (click)="undo()">Undo</button>
         </div>
       </div>
-
-      <!-- EDITOR WRAPPER -->
       <div class="code-editor-wrapper">
         <div class="editor-instance-wrapper" [hidden]="activeTab !== 'html'">
           <textarea #htmlEditor>{{ htmlContent }}</textarea>
@@ -50,17 +45,8 @@
         </div>
       </div>
     </div>
-
-    <!-- PREVIEW PANEL -->
     <div class="preview-panel">
-      @if (viewMode === 'fullscreen') {
-        <div class="preview-header">
-
-          <span>Live Preview</span>
-          <button class="btn btn-secondary" (click)="toggleFullscreen()">Fullscreen</button>
-
-        </div>
-      }
+      <div class="preview-header"><span>Live Preview</span></div>
       <div class="preview-content">
         <iframe [srcdoc]="livePreviewContent | safeHtml"></iframe>
       </div>
