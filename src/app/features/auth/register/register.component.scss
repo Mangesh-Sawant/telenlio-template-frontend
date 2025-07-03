@@ -15,7 +15,6 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 2rem;
   box-sizing: border-box; // Important for padding
   position: relative; // For the decorative circles
   overflow: hidden;
@@ -90,6 +89,7 @@
   width: 100%;
   max-width: 450px;
   text-align: center;
+  margin: 0 auto;
 }
 
 .form-title {

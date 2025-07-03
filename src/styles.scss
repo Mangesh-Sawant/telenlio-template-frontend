@@ -18,8 +18,8 @@
   --danger-color: #ef4444; // Red
 
   // Neutral Colors
-  --page-bg: #f8fafc; // Light Gray
-  --card-bg: #ffffff;
+  --page-bg: #f8fafc;
+  --card-bg: rgba(255, 255, 255, 0.25);
   --border-color: #e5e7eb;
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
@@ -34,9 +34,22 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  height: 100vh;
+  overflow-y: auto;
   font-family: var(--font-family);
+  background: var(--page-bg);
+}
+
+.auth-background {
   background: linear-gradient(135deg, var(--secondary-bg), var(--primary-bg));
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 100vh;
+  width: 100vw;
+  display: block;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 /* You can add global styles to this file, and also import other style files */

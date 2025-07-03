@@ -13,7 +13,8 @@
     <div class="header-actions">
       <button (click)="onClickLogOut()" class="btn btn-link">Logout</button>
       <button class="btn btn-secondary">Import</button>
-      <button routerLink="/editor/new" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create New Template</button>
+      <button routerLink="/editor/new" class="btn btn-primary"><i class="ti ti-plus text-xl"></i> Create New Template
+      </button>
     </div>
   </header>
 
@@ -24,11 +25,10 @@
         <div class="icon-wrapper primary"><i class="ti ti-file"></i></div>
         <div class="stat-info">
           <span class="stat-label">Total Templates</span>
-          <!-- Dynamically bind the number of templates -->
-          <span class="stat-value">{{ templates.length }}</span>
+          <!-- Show the total count from the master list, unaffected by filters -->
+          <span class="stat-value">{{ masterTemplates.length }}</span>
         </div>
       </div>
-      <!-- Other stat cards remain unchanged -->
       <div class="stat-card">
         <div class="icon-wrapper success"><i class="ti ti-clock-hour-2"></i></div>
         <div class="stat-info"><span class="stat-label">Recently Modified</span><span class="stat-value">0</span></div>
@@ -41,45 +41,58 @@
 
     <!-- FILTERS BAR -->
     <section class="card filter-bar">
-      <!-- Unchanged -->
-      <div class="search-input"><i class="bi bi-search"></i><input type="text" placeholder="Search templates..."></div>
-      <div class="sort-select"><select><option>Newest First</option><option>Oldest First</option><option>Alphabetical</option></select><i class="bi bi-chevron-down"></i></div>
+      <div class="search-input">
+        <i class="ti ti-search"></i>
+        <!-- BIND to searchTerm and trigger applyFilters on change -->
+        <input
+          type="text"
+          placeholder="Search templates..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()">
+      </div>
+      <div class="sort-select">
+        <!-- BIND to sortOrder and trigger applyFilters on change -->
+        <select
+          [(ngModel)]="sortOrder"
+          (ngModelChange)="applyFilters()">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="alphabetical">Alphabetical (A-Z)</option>
+        </select>
+        <i class="ti ti-chevron-down"></i>
+      </div>
     </section>
 
     <!-- TEMPLATES LIST -->
     <section class="card templates-list">
       <h2 class="list-title">Your Templates</h2>
 
-      <!-- Show a loading message -->
       <div *ngIf="isLoading" class="loading-message">Loading templates...</div>
 
-      <!-- Show message if no templates are found and not loading -->
-      <div *ngIf="!isLoading && templates.length === 0" class="empty-message">
-        You don't have any templates yet. <a routerLink="/editor/new">Create your first one!</a>
+      <!-- UPDATE: Show message if no results match the filter -->
+      <div *ngIf="!isLoading && filteredTemplates.length === 0" class="empty-message">
+        <span *ngIf="masterTemplates.length > 0">No templates match your search.</span>
+        <span *ngIf="masterTemplates.length === 0">You don't have any templates yet. <a routerLink="/editor/new">Create your first one!</a></span>
       </div>
 
-      <!-- Loop over the 'templates' array from your component -->
-      <div class="template-item" *ngFor="let template of templates">
+      <!-- UPDATE: Loop over the 'filteredTemplates' array -->
+      <div class="template-item" *ngFor="let template of filteredTemplates">
         <div class="template-details">
           <div class="icon-wrapper primary small"><i class="ti ti-file"></i></div>
           <div class="template-info">
-            <!-- Use the 'title' property from your backend model -->
-            <span class="template-name">{{ template.title }}</span>
-            <!-- Use DatePipe to format ISO date strings from the backend (assuming they exist) -->
-            <span class="template-meta" *ngIf="template.created_at">
+            <span class="template-name">{{ template.title | titlecase}}</span>
+            <span class="template-meta" *ngIf="template.created_at || template.updated_at">
               Created: {{ template.created_at | date:'medium' }}  •  Modified: {{ template.updated_at | date:'medium' }}
             </span>
           </div>
         </div>
-        <div class="template-exports">0 exports</div> <!-- Placeholder value -->
+        <div class="template-exports"><b>template ID : </b>{{ template._id }}</div>
         <div class="template-actions">
-          <a href="#" class="action-link link-primary">Preview</a>
-          <!-- CORRECTED: Use property binding for the routerLink to include the template's ID -->
+          <!--          <a href="#" class="action-link link-primary">Preview</a>-->
           <a [routerLink]="['/editor', template._id]" class="action-link link-primary">Open</a>
-          <a href="#" class="action-link link-secondary">Edit Name</a>
-          <a href="#" class="action-link link-success">Duplicate</a>
-          <a href="#" class="action-link link-info">Export</a>
-          <!-- CORRECTED: Use a click handler to call the delete method -->
+          <!--          <a href="#" class="action-link link-secondary">Edit Name</a>-->
+          <!--          <a href="#" class="action-link link-success">Duplicate</a>-->
+          <!--          <a href="#" class="action-link link-info">Export</a>-->
           <a (click)="onDeleteTemplate(template._id, template.title)" class="action-link link-danger">Delete</a>
         </div>
       </div>
