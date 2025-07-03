@@ -8,7 +8,7 @@ import { SafeHtmlPipe } from '../../core/safe-html.pipe';
 import { TemplateService } from './services/template.service';
 import { Template } from './models/template';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { finalize, takeUntil } from 'rxjs/operators';
 
 // Imports for Nunjucks, CodeMirror, and Prettier...
 import * as nunjucks from 'nunjucks';
@@ -31,17 +31,23 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('cssEditor') cssEditorRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('jsonEditor') jsonEditorRef!: ElementRef<HTMLTextAreaElement>;
 
+  // A subject to manage component destruction and prevent memory leaks
   private destroy$ = new Subject<void>();
+
+  // Component State
   isEditMode = false;
+  isDownloadingPdf = false; // For the download button's loading state
   templateId: string | null = null;
   templateName: string = "New Template";
   activeTab: 'html' | 'css' | 'json' = 'html';
   viewMode: 'default' | 'preview' | 'fullscreen' = 'default';
 
+  // CodeMirror editor instances
   private cmHtml?: CodeMirror.Editor;
   private cmCss?: CodeMirror.Editor;
   private cmJson?: CodeMirror.Editor;
 
+  // Content state variables
   htmlContent: string = '';
   cssContent: string = '';
   jsonData: string = '{}';
@@ -50,8 +56,10 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private templateService: TemplateService,
-    private zone: NgZone // Inject NgZone to manage change detection
+    private zone: NgZone // Inject NgZone to manage change detection from CodeMirror
   ) {}
+
+  // --- Angular Lifecycle Hooks ---
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
@@ -81,34 +89,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private initializeEditors(): void {
-    // HTML Editor
-    this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
-      mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
-    });
-    this.cmHtml.setValue(this.htmlContent);
-    this.cmHtml.on('change', (cm) => this.zone.run(() => {
-      this.htmlContent = cm.getValue();
-    }));
-
-    // CSS Editor
-    this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
-      mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
-    });
-    this.cmCss.setValue(this.cssContent);
-    this.cmCss.on('change', (cm) => this.zone.run(() => {
-      this.cssContent = cm.getValue();
-    }));
-
-    // JSON Editor
-    this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
-      mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
-    });
-    this.cmJson.setValue(this.jsonData);
-    this.cmJson.on('change', (cm) => this.zone.run(() => {
-      this.jsonData = cm.getValue();
-    }));
-  }
+  // --- Data Loading and Saving ---
 
   loadTemplateData(id: string): void {
     this.templateService.getTemplateById(id).subscribe({
@@ -125,12 +106,6 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.router.navigate(['/dashboard']);
       }
     });
-  }
-
-  private updateEditorsFromState(): void {
-    if (this.cmHtml) this.cmHtml.setValue(this.htmlContent);
-    if (this.cmCss) this.cmCss.setValue(this.cssContent);
-    if (this.cmJson) this.cmJson.setValue(this.jsonData);
   }
 
   async saveTemplate(): Promise<void> {
@@ -165,10 +140,87 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  downloadPdf(): void {
+    if (!this.isEditMode || !this.templateId) {
+      alert('Please save the template before downloading a PDF.');
+      return;
+    }
+
+    let dataContext;
+    try {
+      dataContext = JSON.parse(this.jsonData);
+    } catch (e) {
+      alert('The JSON data is invalid. Please fix it before downloading.');
+      return;
+    }
+
+    this.isDownloadingPdf = true;
+    this.templateService.renderPdf(this.templateId, dataContext)
+      .pipe(
+        finalize(() => this.isDownloadingPdf = false)
+      )
+      .subscribe({
+        next: (pdfBlob: Blob) => {
+          const url = window.URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          document.body.appendChild(a);
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `${this.templateName || 'template'}.pdf`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        },
+        error: (err) => {
+          console.error('PDF download failed', err);
+          alert('Failed to generate PDF. Please check the console for details.');
+        }
+      });
+  }
+
+  // --- Editor Initialization and Management ---
+
+  private initializeEditors(): void {
+    // HTML Editor
+    this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
+      mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmHtml.setValue(this.htmlContent);
+    this.cmHtml.on('change', (cm) => this.zone.run(() => {
+      this.htmlContent = cm.getValue();
+    }));
+
+    // CSS Editor
+    this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
+      mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmCss.setValue(this.cssContent);
+    this.cmCss.on('change', (cm) => this.zone.run(() => {
+      this.cssContent = cm.getValue();
+    }));
+
+    // JSON Editor
+    this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
+      mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmJson.setValue(this.jsonData);
+    this.cmJson.on('change', (cm) => this.zone.run(() => {
+      this.jsonData = cm.getValue();
+    }));
+  }
+
+  private updateEditorsFromState(): void {
+    if (this.cmHtml) this.cmHtml.setValue(this.htmlContent);
+    if (this.cmCss) this.cmCss.setValue(this.cssContent);
+    if (this.cmJson) this.cmJson.setValue(this.jsonData);
+  }
+
   setActiveTab(tab: 'html' | 'css' | 'json'): void {
     this.activeTab = tab;
     this.refreshAllEditors();
   }
+
+  // --- Editor Actions ---
 
   async formatCode(): Promise<void> {
     const editor = this.getActiveEditor();
@@ -206,6 +258,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // --- View and Layout Management ---
+
   togglePreview(): void {
     this.viewMode = this.viewMode === 'preview' ? 'default' : 'preview';
     this.refreshAllEditors();
@@ -223,6 +277,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cmJson?.refresh();
     }, 10);
   }
+
+  // --- Live Preview Rendering ---
 
   get livePreviewContent(): string {
     let finalHtml = '';

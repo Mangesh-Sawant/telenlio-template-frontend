@@ -46,7 +46,17 @@
       </div>
     </div>
     <div class="preview-panel">
-      <div class="preview-header"><span>Live Preview</span></div>
+      <div class="preview-header">
+        <span>Live Preview</span>
+        <!-- NEW: Download PDF Button -->
+        <button
+          class="btn btn-sm btn-secondary"
+          (click)="downloadPdf()"
+          [disabled]="isDownloadingPdf">
+          <i class="ti ti-download"></i>
+          {{ isDownloadingPdf ? 'Generating...' : 'Download PDF' }}
+        </button>
+      </div>
       <div class="preview-content">
         <iframe [srcdoc]="livePreviewContent | safeHtml"></iframe>
       </div>
