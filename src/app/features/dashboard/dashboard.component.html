@@ -1,3 +1,5 @@
+<!-- FILE: src/app/features/dashboard/dashboard.component.html -->
+
 <div class="dashboard-container">
   <!-- HEADER -->
   <header class="dashboard-header">
@@ -22,62 +24,63 @@
         <div class="icon-wrapper primary"><i class="ti ti-file"></i></div>
         <div class="stat-info">
           <span class="stat-label">Total Templates</span>
-          <span class="stat-value">3</span>
+          <!-- Dynamically bind the number of templates -->
+          <span class="stat-value">{{ templates.length }}</span>
         </div>
       </div>
+      <!-- Other stat cards remain unchanged -->
       <div class="stat-card">
         <div class="icon-wrapper success"><i class="ti ti-clock-hour-2"></i></div>
-        <div class="stat-info">
-          <span class="stat-label">Recently Modified</span>
-          <span class="stat-value">0</span>
-        </div>
+        <div class="stat-info"><span class="stat-label">Recently Modified</span><span class="stat-value">0</span></div>
       </div>
       <div class="stat-card">
         <div class="icon-wrapper info"><i class="ti ti-download"></i></div>
-        <div class="stat-info">
-          <span class="stat-label">PDF Exports</span>
-          <span class="stat-value">16</span>
-        </div>
+        <div class="stat-info"><span class="stat-label">PDF Exports</span><span class="stat-value">16</span></div>
       </div>
     </section>
 
     <!-- FILTERS BAR -->
     <section class="card filter-bar">
-      <div class="search-input">
-        <i class="bi bi-search"></i>
-        <input type="text" placeholder="Search templates...">
-      </div>
-      <div class="sort-select">
-        <select>
-          <option>Newest First</option>
-          <option>Oldest First</option>
-          <option>Alphabetical</option>
-        </select>
-        <i class="bi bi-chevron-down"></i>
-      </div>
+      <!-- Unchanged -->
+      <div class="search-input"><i class="bi bi-search"></i><input type="text" placeholder="Search templates..."></div>
+      <div class="sort-select"><select><option>Newest First</option><option>Oldest First</option><option>Alphabetical</option></select><i class="bi bi-chevron-down"></i></div>
     </section>
 
     <!-- TEMPLATES LIST -->
     <section class="card templates-list">
       <h2 class="list-title">Your Templates</h2>
+
+      <!-- Show a loading message -->
+      <div *ngIf="isLoading" class="loading-message">Loading templates...</div>
+
+      <!-- Show message if no templates are found and not loading -->
+      <div *ngIf="!isLoading && templates.length === 0" class="empty-message">
+        You don't have any templates yet. <a routerLink="/editor/new">Create your first one!</a>
+      </div>
+
+      <!-- Loop over the 'templates' array from your component -->
       <div class="template-item" *ngFor="let template of templates">
         <div class="template-details">
           <div class="icon-wrapper primary small"><i class="ti ti-file"></i></div>
           <div class="template-info">
-            <span class="template-name">{{ template.name }}</span>
-            <span class="template-meta">
-              Created: {{ template.created }}  •  Modified: {{ template.modified }}
+            <!-- Use the 'title' property from your backend model -->
+            <span class="template-name">{{ template.title }}</span>
+            <!-- Use DatePipe to format ISO date strings from the backend (assuming they exist) -->
+            <span class="template-meta" *ngIf="template.created_at">
+              Created: {{ template.created_at | date:'medium' }}  •  Modified: {{ template.updated_at | date:'medium' }}
             </span>
           </div>
         </div>
-        <div class="template-exports">{{ template.exports }} exports</div>
+        <div class="template-exports">0 exports</div> <!-- Placeholder value -->
         <div class="template-actions">
           <a href="#" class="action-link link-primary">Preview</a>
-          <a routerLink="/editor/templateId" class="action-link link-primary">Open</a>
+          <!-- CORRECTED: Use property binding for the routerLink to include the template's ID -->
+          <a [routerLink]="['/editor', template._id]" class="action-link link-primary">Open</a>
           <a href="#" class="action-link link-secondary">Edit Name</a>
           <a href="#" class="action-link link-success">Duplicate</a>
           <a href="#" class="action-link link-info">Export</a>
-          <a href="#" class="action-link link-danger">Delete</a>
+          <!-- CORRECTED: Use a click handler to call the delete method -->
+          <a (click)="onDeleteTemplate(template._id, template.title)" class="action-link link-danger">Delete</a>
         </div>
       </div>
     </section>

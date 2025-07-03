@@ -1,18 +1,23 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, HostBinding, OnInit } from '@angular/core';
+// FILE: src/app/features/editor/editor.component.ts
+
+import { Component, AfterViewInit, ViewChild, ElementRef, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { SafeHtmlPipe } from '../../core/safe-html.pipe'; // Please verify this path
-import { TemplateService } from './services/template.service'; // Please verify this path
-import { Template } from './models/template'; // Please verify this path
+import { SafeHtmlPipe } from '../../core/safe-html.pipe';
+import { TemplateService } from './services/template.service';
+import { Template } from './models/template';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-// Imports for Nunjucks, CodeMirror, and Prettier
+// Imports for Nunjucks, CodeMirror, and Prettier...
 import * as nunjucks from 'nunjucks';
 import * as CodeMirror from 'codemirror';
 import * as prettier from "prettier/standalone";
 import * as prettierPluginHtml from "prettier/plugins/html";
 import prettierPluginEstree from "prettier/plugins/estree";
 import * as prettierPluginBabel from "prettier/plugins/babel";
+
 
 @Component({
   selector: 'app-editor',
@@ -21,49 +26,88 @@ import * as prettierPluginBabel from "prettier/plugins/babel";
   templateUrl: './editor.component.html',
   styleUrls: ['./editor.component.scss']
 })
-export class EditorComponent implements OnInit, AfterViewInit {
+export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('htmlEditor') htmlEditorRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('cssEditor') cssEditorRef!: ElementRef<HTMLTextAreaElement>;
-  // CORRECTED: @Viewchild -> @ViewChild
   @ViewChild('jsonEditor') jsonEditorRef!: ElementRef<HTMLTextAreaElement>;
 
+  private destroy$ = new Subject<void>();
   isEditMode = false;
   templateId: string | null = null;
-
-  private cmHtml: CodeMirror.Editor | undefined;
-  private cmCss: CodeMirror.Editor | undefined;
-  private cmJson: CodeMirror.Editor | undefined;
-
   templateName: string = "New Template";
   activeTab: 'html' | 'css' | 'json' = 'html';
-
-  @HostBinding('class')
   viewMode: 'default' | 'preview' | 'fullscreen' = 'default';
 
-  // Internal component state
-  htmlContent: string = `<h1>Welcome, {{ user.name }}!</h1>`;
-  cssContent: string = `body { font-family: sans-serif; color: #333; }`;
-  jsonData: string = `{ "user": { "name": "Alex" } }`; // JSON data is kept as a string for the editor
+  private cmHtml?: CodeMirror.Editor;
+  private cmCss?: CodeMirror.Editor;
+  private cmJson?: CodeMirror.Editor;
+
+  htmlContent: string = '';
+  cssContent: string = '';
+  jsonData: string = '{}';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private templateService: TemplateService
+    private templateService: TemplateService,
+    private zone: NgZone // Inject NgZone to manage change detection
   ) {}
 
   ngOnInit(): void {
-    this.templateId = this.route.snapshot.paramMap.get('id');
-    if (this.templateId && this.templateId !== 'new') {
-      this.isEditMode = true;
-      this.loadTemplateData(this.templateId);
-    } else {
-      this.isEditMode = false;
-      this.templateName = "New Template";
-    }
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const id = params.get('id');
+      if (id && id !== 'new') {
+        this.isEditMode = true;
+        this.templateId = id;
+        this.loadTemplateData(id);
+      } else {
+        this.isEditMode = false;
+        this.templateId = null;
+        this.templateName = "New Template";
+        this.htmlContent = `<h1>Welcome, {{ user.name }}!</h1>\n<p>Your account is ready.</p>`;
+        this.cssContent = `body {\n  font-family: sans-serif;\n  color: #333;\n}`;
+        this.jsonData = `{ \n  "user": {\n    "name": "Alex"\n  }\n}`;
+        this.updateEditorsFromState();
+      }
+    });
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => this.initializeEditors(true), 0);
+    this.initializeEditors();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initializeEditors(): void {
+    // HTML Editor
+    this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
+      mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmHtml.setValue(this.htmlContent);
+    this.cmHtml.on('change', (cm) => this.zone.run(() => {
+      this.htmlContent = cm.getValue();
+    }));
+
+    // CSS Editor
+    this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
+      mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmCss.setValue(this.cssContent);
+    this.cmCss.on('change', (cm) => this.zone.run(() => {
+      this.cssContent = cm.getValue();
+    }));
+
+    // JSON Editor
+    this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
+      mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
+    });
+    this.cmJson.setValue(this.jsonData);
+    this.cmJson.on('change', (cm) => this.zone.run(() => {
+      this.jsonData = cm.getValue();
+    }));
   }
 
   loadTemplateData(id: string): void {
@@ -73,11 +117,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
         this.htmlContent = template.html;
         this.cssContent = template.css;
         this.jsonData = JSON.stringify(template.example_data, null, 2);
-
-        // setValue can be called even if editors aren't fully ready
-        this.cmHtml?.setValue(this.htmlContent);
-        this.cmCss?.setValue(this.cssContent);
-        this.cmJson?.setValue(this.jsonData);
+        this.updateEditorsFromState();
       },
       error: (err) => {
         console.error("Failed to load template", err);
@@ -85,6 +125,12 @@ export class EditorComponent implements OnInit, AfterViewInit {
         this.router.navigate(['/dashboard']);
       }
     });
+  }
+
+  private updateEditorsFromState(): void {
+    if (this.cmHtml) this.cmHtml.setValue(this.htmlContent);
+    if (this.cmCss) this.cmCss.setValue(this.cssContent);
+    if (this.cmJson) this.cmJson.setValue(this.jsonData);
   }
 
   async saveTemplate(): Promise<void> {
@@ -119,21 +165,9 @@ export class EditorComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private initializeEditors(initialLoad = false): void {
-    if (initialLoad) {
-      this.initializeHtmlEditor();
-      this.initializeCssEditor();
-      this.initializeJsonEditor();
-    }
-  }
-
   setActiveTab(tab: 'html' | 'css' | 'json'): void {
     this.activeTab = tab;
-    setTimeout(() => {
-      this.cmHtml?.refresh();
-      this.cmCss?.refresh();
-      this.cmJson?.refresh();
-    }, 1);
+    this.refreshAllEditors();
   }
 
   async formatCode(): Promise<void> {
@@ -154,8 +188,14 @@ export class EditorComponent implements OnInit, AfterViewInit {
         printWidth: 100,
       });
       editor.setValue(formattedCode);
-    } catch (error) { console.error("Could not format code:", error); }
+    } catch (error) {
+      console.error("Could not format code:", error);
+      alert("Could not format the code. Check the console for details.");
+    }
   }
+
+  undo(): void { this.getActiveEditor()?.undo(); }
+  clearCode(): void { this.getActiveEditor()?.setValue(''); }
 
   private getActiveEditor(): CodeMirror.Editor | undefined {
     switch (this.activeTab) {
@@ -165,9 +205,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
       default: return undefined;
     }
   }
-
-  undo(): void { this.getActiveEditor()?.undo(); }
-  clearCode(): void { this.getActiveEditor()?.setValue(''); }
 
   togglePreview(): void {
     this.viewMode = this.viewMode === 'preview' ? 'default' : 'preview';
@@ -184,37 +221,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       this.cmHtml?.refresh();
       this.cmCss?.refresh();
       this.cmJson?.refresh();
-    }, 250);
-  }
-
-  private initializeHtmlEditor(): void {
-    if (!this.cmHtml) {
-      this.cmHtml = CodeMirror.fromTextArea(this.htmlEditorRef.nativeElement, {
-        mode: 'jinja2', lineNumbers: true, theme: 'default', autoCloseBrackets: true
-      });
-      this.cmHtml.on('change', (cm) => this.htmlContent = cm.getValue());
-    }
-    this.cmHtml.refresh();
-  }
-
-  private initializeCssEditor(): void {
-    if (!this.cmCss) {
-      this.cmCss = CodeMirror.fromTextArea(this.cssEditorRef.nativeElement, {
-        mode: 'css', lineNumbers: true, theme: 'default', autoCloseBrackets: true
-      });
-      this.cmCss.on('change', (cm) => this.cssContent = cm.getValue());
-    }
-    this.cmCss.refresh();
-  }
-
-  private initializeJsonEditor(): void {
-    if (!this.cmJson) {
-      this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
-        mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
-      });
-      this.cmJson.on('change', (cm) => this.jsonData = cm.getValue());
-    }
-    this.cmJson.refresh();
+    }, 10);
   }
 
   get livePreviewContent(): string {
@@ -223,7 +230,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
       const dataContext = JSON.parse(this.jsonData);
       finalHtml = nunjucks.renderString(this.htmlContent, dataContext);
     } catch (e) {
-      finalHtml = `<div style="color: red; font-family: sans-serif; padding: 20px;"><h3>Error Rendering Template</h3><pre>${(e as Error).message}</pre></div>`;
+      const errorMessage = (e instanceof Error) ? e.message : String(e);
+      finalHtml = `<div style="color: red; background: #fff1f1; border: 1px solid red; font-family: sans-serif; padding: 20px;"><h3>Error Rendering Template</h3><pre>${errorMessage}</pre></div>`;
     }
     return `<html><head><style>${this.cssContent}</style></head><body>${finalHtml}</body></html>`;
   }
