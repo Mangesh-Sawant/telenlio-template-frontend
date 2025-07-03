@@ -35,7 +35,7 @@
       </div>
       <div class="stat-card">
         <div class="icon-wrapper info"><i class="ti ti-download"></i></div>
-        <div class="stat-info"><span class="stat-label">PDF Exports</span><span class="stat-value">16</span></div>
+        <div class="stat-info"><span class="stat-label">PDF Exports</span><span class="stat-value">0</span></div>
       </div>
     </section>
 
@@ -80,7 +80,7 @@
         <div class="template-details">
           <div class="icon-wrapper primary small"><i class="ti ti-file"></i></div>
           <div class="template-info">
-            <span class="template-name">{{ template.title | titlecase}}</span>
+            <span class="template-name">{{ template.title | titlecase }}</span>
             <span class="template-meta" *ngIf="template.created_at || template.updated_at">
               Created: {{ template.created_at | date:'medium' }}  •  Modified: {{ template.updated_at | date:'medium' }}
             </span>
