@@ -66,6 +66,16 @@
     <!-- TEMPLATES LIST -->
     <section class="card templates-list">
       <h2 class="list-title">Your Templates</h2>
+      <div class="example-template">
+        <h3>Example Templates</h3>
+       <div class="button">
+         @for (example of exampleTemplates; let index = $index; track index) {
+           <button class="btn btn-secondary" (click)="openExampleTemplateByIndex(index)">
+             <i class="ti ti-bulb"></i> {{ example.title }}
+           </button>
+         }
+       </div>
+      </div>
 
       <div *ngIf="isLoading" class="loading-message">Loading templates...</div>
 

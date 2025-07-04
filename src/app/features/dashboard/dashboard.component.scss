@@ -310,6 +310,20 @@
   justify-content: flex-end;
 }
 
+.example-template {
+  border-bottom: 1px solid var(--border-color);
+
+  h3 {
+    font-size: 14px;
+  }
+
+  .button {
+    display: flex;
+    gap: 8px;
+    margin: 8px;
+  }
+}
+
 .action-link {
   font-size: 0.9rem;
   font-weight: 500;

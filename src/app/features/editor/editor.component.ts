@@ -1,14 +1,14 @@
 // FILE: src/app/features/editor/editor.component.ts
 
-import { Component, AfterViewInit, ViewChild, ElementRef, OnInit, OnDestroy, NgZone } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { SafeHtmlPipe } from '../../core/safe-html.pipe';
-import { TemplateService } from './services/template.service';
-import { Template } from './models/template';
-import { Subject } from 'rxjs';
-import { finalize, takeUntil } from 'rxjs/operators';
+import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {ActivatedRoute, Router, RouterModule} from '@angular/router';
+import {SafeHtmlPipe} from '../../core/safe-html.pipe';
+import {TemplateService} from './services/template.service';
+import {Template} from './models/template';
+import {Subject} from 'rxjs';
+import {finalize, takeUntil} from 'rxjs/operators';
 
 // Imports for Nunjucks, CodeMirror, and Prettier...
 import * as nunjucks from 'nunjucks';
@@ -57,7 +57,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private templateService: TemplateService,
     private zone: NgZone // Inject NgZone to manage change detection from CodeMirror
-  ) {}
+  ) {
+  }
 
   // --- Angular Lifecycle Hooks ---
 
@@ -69,13 +70,23 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.templateId = id;
         this.loadTemplateData(id);
       } else {
-        this.isEditMode = false;
-        this.templateId = null;
-        this.templateName = "New Template";
-        this.htmlContent = `<h1>Welcome, {{ user.name }}!</h1>\n<p>Your account is ready.</p>`;
-        this.cssContent = `body {\n  font-family: sans-serif;\n  color: #333;\n}`;
-        this.jsonData = `{ \n  "user": {\n    "name": "Alex"\n  }\n}`;
-        this.updateEditorsFromState();
+        const example = localStorage.getItem('example_template');
+        if (example) {
+          const data = JSON.parse(example);
+          this.templateName = data.title;
+          this.htmlContent = data.html;
+          this.cssContent = data.css;
+          this.jsonData = JSON.stringify(data.example_data, null, 2);
+          localStorage.removeItem('example_template');
+        } else {
+          this.isEditMode = false;
+          this.templateId = null;
+          this.templateName = "New Template";
+          this.htmlContent = `<h1>Welcome, {{ user.name }}!</h1>\n<p>Your account is ready.</p>`;
+          this.cssContent = `body {\n  font-family: sans-serif;\n  color: #333;\n}`;
+          this.jsonData = `{ \n  "user": {\n    "name": "Alex"\n  }\n}`;
+          this.updateEditorsFromState();
+        }
       }
     });
   }
@@ -201,7 +212,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // JSON Editor
     this.cmJson = CodeMirror.fromTextArea(this.jsonEditorRef.nativeElement, {
-      mode: { name: 'javascript', json: true }, lineNumbers: true, theme: 'default', autoCloseBrackets: true
+      mode: {name: 'javascript', json: true}, lineNumbers: true, theme: 'default', autoCloseBrackets: true
     });
     this.cmJson.setValue(this.jsonData);
     this.cmJson.on('change', (cm) => this.zone.run(() => {
@@ -228,10 +239,17 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const code = editor.getValue();
     let parser: string;
     switch (this.activeTab) {
-      case 'html': parser = 'html'; break;
-      case 'css': parser = 'css'; break;
-      case 'json': parser = 'json'; break;
-      default: return;
+      case 'html':
+        parser = 'html';
+        break;
+      case 'css':
+        parser = 'css';
+        break;
+      case 'json':
+        parser = 'json';
+        break;
+      default:
+        return;
     }
     try {
       const formattedCode = await prettier.format(code, {
@@ -246,15 +264,24 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  undo(): void { this.getActiveEditor()?.undo(); }
-  clearCode(): void { this.getActiveEditor()?.setValue(''); }
+  undo(): void {
+    this.getActiveEditor()?.undo();
+  }
+
+  clearCode(): void {
+    this.getActiveEditor()?.setValue('');
+  }
 
   private getActiveEditor(): CodeMirror.Editor | undefined {
     switch (this.activeTab) {
-      case 'html': return this.cmHtml;
-      case 'css': return this.cmCss;
-      case 'json': return this.cmJson;
-      default: return undefined;
+      case 'html':
+        return this.cmHtml;
+      case 'css':
+        return this.cmCss;
+      case 'json':
+        return this.cmJson;
+      default:
+        return undefined;
     }
   }
 
@@ -270,12 +297,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.refreshAllEditors();
   }
 
-  private refreshAllEditors(): void {
-    setTimeout(() => {
-      this.cmHtml?.refresh();
-      this.cmCss?.refresh();
-      this.cmJson?.refresh();
-    }, 10);
+  navigateToDocument(): void {
+    this.router.navigate(['/document']);
   }
 
   // --- Live Preview Rendering ---
@@ -290,5 +313,13 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
       finalHtml = `<div style="color: red; background: #fff1f1; border: 1px solid red; font-family: sans-serif; padding: 20px;"><h3>Error Rendering Template</h3><pre>${errorMessage}</pre></div>`;
     }
     return `<html><head><style>${this.cssContent}</style></head><body>${finalHtml}</body></html>`;
+  }
+
+  private refreshAllEditors(): void {
+    setTimeout(() => {
+      this.cmHtml?.refresh();
+      this.cmCss?.refresh();
+      this.cmJson?.refresh();
+    }, 10);
   }
 }

@@ -1,11 +1,12 @@
 // FILE: src/app/features/dashboard/dashboard.component.ts
 
-import { Component, OnInit } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth.service';
-import { TemplateService } from '../editor/services/template.service';
+import {Component, OnInit} from '@angular/core';
+import {CommonModule, DatePipe} from '@angular/common';
+import {Router, RouterLink} from '@angular/router';
+import {FormsModule} from '@angular/forms';
+import {AuthService} from '../../core/auth.service';
+import {TemplateService} from '../editor/services/template.service';
+import {EXAMPLE_TEMPLATES} from '../../core/data/example-template';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,14 +19,15 @@ export class DashboardComponent implements OnInit {
   masterTemplates: any[] = [];
   filteredTemplates: any[] = [];
   isLoading = true;
+  exampleTemplates = EXAMPLE_TEMPLATES;
   searchTerm: string = '';
   sortOrder: 'newest' | 'oldest' | 'alphabetical' = 'newest';
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private templateService: TemplateService
-  ) {}
+    private templateService: TemplateService) {
+  }
 
   ngOnInit(): void {
     this.loadTemplates();
@@ -103,5 +105,11 @@ export class DashboardComponent implements OnInit {
   onClickLogOut(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  openExampleTemplateByIndex(index: number): void {
+    const selectedTemplate = EXAMPLE_TEMPLATES[index];
+    localStorage.setItem('example_template', JSON.stringify(selectedTemplate));
+    this.router.navigate(['/editor/new']);
   }
 }

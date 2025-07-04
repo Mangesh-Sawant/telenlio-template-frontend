@@ -11,6 +11,8 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn btn-sm btn-tab bg-yellow" (click)="navigateToDocument()">
+        <i class="ti ti-file-info"></i> Document</button>
       <button class="btn btn-secondary" (click)="togglePreview()">Preview</button>
       <button class="btn btn-secondary" (click)="toggleFullscreen()">Fullscreen</button>
       <button class="btn btn-primary" (click)="saveTemplate()">
@@ -23,9 +25,16 @@
     <div class="editor-panel">
       <div class="editor-toolbar">
         <div class="tabs">
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML (Jinja2)</button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS</button>
-          <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON Data</button>
+          <div>
+            <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'html'" (click)="setActiveTab('html')">HTML
+              (Jinja2)
+            </button>
+            <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'css'" (click)="setActiveTab('css')">CSS
+            </button>
+            <button class="btn btn-sm btn-tab" [class.active]="activeTab === 'json'" (click)="setActiveTab('json')">JSON
+              Data
+            </button>
+          </div>
         </div>
         <div class="actions">
           <button class="btn btn-sm btn-secondary" (click)="formatCode()">Format</button>
